@@ -1,0 +1,165 @@
+{
+  "entities": {
+    "Hive": {
+      "title": "Kovan",
+      "description": "Arı kovanı bilgilerini tutar.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Sahip kullanıcı ID" },
+        "code": { "type": "string", "description": "Kovan numarası/kodu" },
+        "status": { "type": "string", "enum": ["gelişim", "bölme", "aktif", "pasif", "ana_ari_kutusu"], "description": "Kovanın mevcut durumu" },
+        "breed": { "type": "string", "enum": ["F1", "Saf", "Anadolu", "Karniyol", "Belfast", "Kafkas"], "description": "Ana arı ırkı" },
+        "queenYear": { "type": "integer", "description": "Ana arı yılı" },
+        "population": { "type": "integer", "description": "Çerçeve sayısı / Popülasyon" },
+        "lastFeedingDate": { "type": "string", "format": "date" },
+        "lastMedicationDate": { "type": "string", "format": "date" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "code", "status"]
+    },
+    "Feeding": {
+      "title": "Besleme",
+      "description": "Kovan besleme kayıtları.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "hiveId": { "type": "string" },
+        "type": { "type": "string", "enum": ["Şerbet", "Kek", "Fondan", "Diğer"] },
+        "amount": { "type": "string" },
+        "date": { "type": "string", "format": "date" }
+      },
+      "required": ["userId", "hiveId", "type", "date"]
+    },
+    "Medication": {
+      "title": "İlaçlama",
+      "description": "Kovan ilaçlama/bakım kayıtları.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "hiveId": { "type": "string" },
+        "medicineName": { "type": "string" },
+        "type": { "type": "string", "enum": ["Varroa", "Yavru Çürüklüğü", "Nosema", "Diğer"] },
+        "date": { "type": "string", "format": "date" }
+      },
+      "required": ["userId", "hiveId", "medicineName", "date"]
+    },
+    "Queen": {
+      "title": "Ana Arı",
+      "description": "Bireysel ana arı kaydı ve detaylı gelişim süreci.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "batchId": { "type": "string", "description": "Bağlı olduğu transfer grubu ID" },
+        "hiveId": { "type": "string", "description": "Bulunduğu çiftleşme kovanı ID" },
+        "birthDate": { "type": "string", "format": "date" },
+        "matingDate": { "type": "string", "format": "date" },
+        "eggLayingDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["koza", "çıktı", "çiftleşme", "yumurtlama", "aktif", "satıldı", "kayıp"] },
+        "isArtificialInsemination": { "type": "boolean" },
+        "color": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "status", "birthDate"]
+    },
+    "QueenBatch": {
+      "title": "Ana Arı Üretim Döngüsü",
+      "description": "Larva transferi ve üretim grubu takibi.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "transferDate": { "type": "string", "format": "date", "description": "Larva transfer tarihi (Day 4)" },
+        "breed": { "type": "string", "enum": ["F1", "Saf", "Anadolu", "Karniyol", "Belfast", "Kafkas"] },
+        "breederHiveId": { "type": "string", "description": "Damızlık kovan ID" },
+        "starterHiveId": { "type": "string", "description": "Başlatıcı kovan ID" },
+        "transferCount": { "type": "integer" },
+        "nurturedCount": { "type": "integer", "description": "Tutan (kapanan) meme sayısı" },
+        "status": { "type": "string", "enum": ["başlatıldı", "memeler_kapandı", "dağıtıldı", "tamamlandı"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "transferDate", "transferCount", "status"]
+    },
+    "Sale": {
+      "title": "Satış",
+      "description": "Ürün ve arı satış kayıtları.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["ana_ari", "ari_kolonisi", "bal", "diger"] },
+        "productName": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "enum": ["adet", "kg", "plaka"] },
+        "price": { "type": "number" },
+        "customerInfo": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "quantity", "price", "date"]
+    },
+    "Expense": {
+      "title": "Gider",
+      "description": "Harcama kayıtları.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "description", "amount", "date"]
+    },
+    "Stock": {
+      "title": "Stok",
+      "description": "Envanter ve stok takibi.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productName": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "enum": ["adet", "kg", "plaka"] },
+        "category": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productName", "quantity"]
+    }
+  },
+  "firestore": {
+    "/hives/{hiveId}": {
+      "schema": "Hive",
+      "description": "Kovan koleksiyonu"
+    },
+    "/queens/{queenId}": {
+      "schema": "Queen",
+      "description": "Ana arı koleksiyonu"
+    },
+    "/queenBatches/{batchId}": {
+      "schema": "QueenBatch",
+      "description": "Ana arı üretim grupları"
+    },
+    "/sales/{saleId}": {
+      "schema": "Sale",
+      "description": "Satış kayıtları"
+    },
+    "/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Gider kayıtları"
+    },
+    "/feedings/{feedingId}": {
+      "schema": "Feeding",
+      "description": "Besleme kayıtları"
+    },
+    "/medications/{medicationId}": {
+      "schema": "Medication",
+      "description": "İlaçlama kayıtları"
+    },
+    "/stocks/{stockId}": {
+      "schema": "Stock",
+      "description": "Stok koleksiyonu"
+    }
+  }
+}

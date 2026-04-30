@@ -1,0 +1,6 @@
+{
+  "name": "VızVızPro - Arıcılık Yönetimi",
+  "description": "Arı üretim süreci, kovan takibi, ana arı yetiştirme, satış ve gider yönetimi için kapsamlı arıcılık uygulaması.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["Firebase"]
+}

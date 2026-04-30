@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Hive Validation
+    function isValidHive(data) {
+      return data.userId == request.auth.uid &&
+             data.code is string && data.code.size() > 0 && data.code.size() <= 64 &&
+             data.status in ['gelişim', 'bölme', 'aktif', 'pasif', 'ana_ari_kutusu'] &&
+             (!('population' in data) || data.population is number) &&
+             (!('queenYear' in data) || data.queenYear is int) &&
+             (!('breed' in data) || data.breed is string) &&
+             (!('notes' in data) || data.notes is string);
+    }
+
+    match /hives/{hiveId} {
+      allow create: if isSignedIn() && isValidHive(request.resource.data);
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /feedings/{feedingId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /medications/{medicationId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Queen Validation
+    function isValidQueen(data) {
+      return data.userId == request.auth.uid &&
+             data.status in ['koza', 'çıktı', 'çiftleşme', 'yumurtlama', 'aktif', 'satıldı', 'kayıp'] &&
+             data.birthDate is string &&
+             (!('isArtificialInsemination' in data) || data.isArtificialInsemination is bool) &&
+             (!('notes' in data) || data.notes is string);
+    }
+
+    match /queens/{queenId} {
+      allow create: if isSignedIn() && isValidQueen(request.resource.data);
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+
+    // QueenBatch Validation
+    function isValidQueenBatch(data) {
+      return data.userId == request.auth.uid &&
+             data.status in ['başlatıldı', 'memeler_kapandı', 'dağıtıldı', 'tamamlandı'] &&
+             data.transferDate is string &&
+             data.transferCount is number;
+    }
+
+    match /queenBatches/{batchId} {
+      allow create: if isSignedIn() && isValidQueenBatch(request.resource.data);
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Sale Validation
+    function isValidSale(data) {
+      return data.userId == request.auth.uid &&
+             data.type in ['ana_ari', 'ari_kolonisi', 'bal', 'diger'] &&
+             data.quantity is number && data.price is number &&
+             data.date is string;
+    }
+
+    match /sales/{saleId} {
+      allow create: if isSignedIn() && isValidSale(request.resource.data);
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+
+    function isValidExpense(data) {
+      return data.userId == request.auth.uid &&
+             data.amount is number &&
+             data.description is string &&
+             data.date is string;
+    }
+
+    match /expenses/{expenseId} {
+      allow create: if isSignedIn() && isValidExpense(request.resource.data);
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Stock Validation
+    function isValidStock(data) {
+      return data.userId == request.auth.uid &&
+             data.productName is string &&
+             data.quantity is number;
+    }
+
+    match /stocks/{stockId} {
+      allow create: if isSignedIn() && isValidStock(request.resource.data);
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
+  }
+}
