@@ -48,6 +48,21 @@ export default function Dashboard({ user, setActiveTab }: DashboardProps) {
   const totalExpense = data.expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const profit = totalIncome - totalExpense;
 
+  const breedStats = data.hives.reduce((acc, h) => {
+    acc[h.breed] = (acc[h.breed] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const lineageStats = data.hives.reduce((acc, h) => {
+    acc[h.lineage] = (acc[h.lineage] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const queenStatusStats = data.hives.reduce((acc, h) => {
+    acc[h.queenStatus] = (acc[h.queenStatus] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   const upcomingHatchings = data.batches
     .map(batch => ({
       ...batch,
@@ -93,6 +108,74 @@ export default function Dashboard({ user, setActiveTab }: DashboardProps) {
             <p className="text-[8px] font-bold text-slate-300 uppercase mt-1">{stat.sub}</p>
           </motion.div>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
+              <Crown className="w-4 h-4 text-amber-600" />
+            </div>
+            <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Irk Dağılımı</h4>
+          </div>
+          <div className="flex flex-wrap gap-2">
+             {Object.entries(breedStats).map(([breed, count]) => (
+                <div key={breed} className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100">
+                   <span className="text-[10px] font-black text-slate-900 uppercase">{breed}</span>
+                   <span className="bg-amber-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-lg">{count}</span>
+                </div>
+             ))}
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-blue-600" />
+            </div>
+            <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Kuşak Durumu</h4>
+          </div>
+          <div className="flex flex-wrap gap-2">
+             {Object.entries(lineageStats).map(([lineage, count]) => (
+                <div key={lineage} className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100">
+                   <span className="text-[10px] font-black text-slate-900 uppercase">{lineage}</span>
+                   <span className="bg-blue-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-lg">{count}</span>
+                </div>
+             ))}
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
+              <Sparkle className="w-4 h-4 text-purple-600" />
+            </div>
+            <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Ana Arı Durumu</h4>
+          </div>
+          <div className="flex flex-wrap gap-2">
+             {Object.entries(queenStatusStats).map(([status, count]) => (
+                <div key={status} className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-2xl border transition-colors",
+                  status === 'Ana Arısız' ? "bg-red-50 border-red-100" :
+                  status === 'Meme Var' ? "bg-amber-50 border-amber-100" :
+                  status === 'Çiftleşmiş (Yumurtlayan)' ? "bg-green-50 border-green-100" : "bg-purple-50 border-purple-100"
+                )}>
+                   <span className={cn(
+                     "text-[9px] font-black uppercase",
+                     status === 'Ana Arısız' ? "text-red-700" :
+                     status === 'Meme Var' ? "text-amber-700" :
+                     status === 'Çiftleşmiş (Yumurtlayan)' ? "text-green-700" : "text-purple-700"
+                   )}>{status}</span>
+                   <span className={cn(
+                     "text-[9px] font-black px-1.5 py-0.5 rounded-lg",
+                     status === 'Ana Arısız' ? "bg-red-600 text-white" :
+                     status === 'Meme Var' ? "bg-amber-600 text-white" :
+                     status === 'Çiftleşmiş (Yumurtlayan)' ? "bg-green-600 text-white" : "bg-purple-600 text-white"
+                   )}>{count}</span>
+                </div>
+             ))}
+          </div>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">

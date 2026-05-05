@@ -48,7 +48,7 @@ export default function FeedingList({ user }: FeedingListProps) {
     if (selectAll) {
       setSelectedHiveIds([]);
     } else {
-      setSelectedHiveIds(hives.filter(h => h.status === 'aktif').map(h => h.id));
+      setSelectedHiveIds(hives.map(h => h.id));
     }
     setSelectAll(!selectAll);
   };
@@ -151,7 +151,7 @@ export default function FeedingList({ user }: FeedingListProps) {
                         </button>
                     </div>
                     <div className="grid grid-cols-3 gap-2 overflow-y-auto pr-2 pb-2">
-                        {hives.filter(h => h.status === 'aktif').map(hive => (
+                        {hives.map(hive => (
                             <button
                                 key={hive.id}
                                 type="button"

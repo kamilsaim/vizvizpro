@@ -3,9 +3,10 @@ import { User } from 'firebase/auth';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Hive, HiveStatus, QueenBreed, QueenLineage, HiveQueenStatus } from '../types';
-import { Plus, Search, Loader2, X, Trash2, Edit2, Box, Calendar, Shield, Droplets, Info } from 'lucide-react';
+import { Plus, Search, Loader2, X, Trash2, Edit2, Box, Calendar, Shield, Droplets, Info, AlertCircle, Sparkle, LayoutGrid, List, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn, formatDate, getQueenColor } from '../lib/utils';
+import HiveDetail from './HiveDetail';
 
 interface HiveListProps {
   user: User;
@@ -17,6 +18,10 @@ export default function HiveList({ user }: HiveListProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [queenStatusFilter, setQueenStatusFilter] = useState<HiveQueenStatus | 'Hepsi'>('Hepsi');
+  const [viewLayout, setViewLayout] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'code'>('date-desc');
+  const [selectedHiveForDetail, setSelectedHiveForDetail] = useState<Hive | null>(null);
   
   const initialForm = {
     code: '',
@@ -76,9 +81,85 @@ export default function HiveList({ user }: HiveListProps) {
     setIsAdding(true);
   };
 
-  const filteredHives = hives.filter(h => 
-    h.code.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredHives = hives
+    .filter(h => {
+      const matchesSearch = 
+        h.code.toLowerCase().includes(search.toLowerCase()) ||
+        (h.breed && h.breed.toLowerCase().includes(search.toLowerCase())) ||
+        (h.lineage && h.lineage.toLowerCase().includes(search.toLowerCase()));
+      const matchesQueenStatus = queenStatusFilter === 'Hepsi' || h.queenStatus === queenStatusFilter;
+      return matchesSearch && matchesQueenStatus;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'code') return a.code.localeCompare(b.code);
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortBy === 'date-desc' ? dateB - dateA : dateA - dateB;
+    });
+
+  const queenStatusOptions: (HiveQueenStatus | 'Hepsi')[] = [
+    'Hepsi',
+    'Ana Arısız',
+    'Meme Var',
+    'Bakire',
+    'Çiftleşmemiş/Uçuşta',
+    'Çiftleşmiş (Yumurtlayan)',
+    'Yaşlı/Değiştirilecek'
+  ];
+
+  const getQueenStatusStyles = (status?: HiveQueenStatus) => {
+    switch (status) {
+      case 'Ana Arısız':
+        return { 
+          bg: 'bg-slate-50', 
+          border: 'border-slate-200', 
+          text: 'text-slate-600',
+          badge: 'bg-slate-500',
+          iconColor: 'text-slate-500'
+        };
+      case 'Meme Var':
+        return { 
+          bg: 'bg-amber-50', 
+          border: 'border-amber-200', 
+          text: 'text-amber-600',
+          badge: 'bg-amber-600',
+          iconColor: 'text-amber-500'
+        };
+      case 'Bakire':
+      case 'Çiftleşmemiş/Uçuşta':
+        return { 
+          bg: 'bg-blue-50', 
+          border: 'border-blue-200', 
+          text: 'text-blue-600',
+          badge: 'bg-blue-600',
+          iconColor: 'text-blue-500'
+        };
+      case 'Çiftleşmiş (Yumurtlayan)':
+        return { 
+          bg: 'bg-green-50', 
+          border: 'border-green-200', 
+          text: 'text-green-600',
+          badge: 'bg-green-600',
+          iconColor: 'text-green-500'
+        };
+      case 'Yaşlı/Değiştirilecek':
+        return { 
+          bg: 'bg-purple-50', 
+          border: 'border-purple-200', 
+          text: 'text-purple-600',
+          badge: 'bg-purple-600',
+          iconColor: 'text-purple-500'
+        };
+      default:
+        return { 
+          bg: 'bg-white', 
+          border: 'border-slate-100', 
+          text: 'text-slate-600',
+          badge: 'bg-slate-600',
+          iconColor: 'text-slate-400'
+        };
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -89,22 +170,137 @@ export default function HiveList({ user }: HiveListProps) {
         </button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" placeholder="Kovan ara..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-3xl outline-none shadow-sm" />
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input type="text" placeholder="Kovan ara..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-3xl outline-none shadow-sm" />
+        </div>
+        <div className="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm">
+          <button 
+            onClick={() => setViewLayout('grid')}
+            className={cn("p-2 rounded-xl transition-all", viewLayout === 'grid' ? "bg-amber-100 text-amber-600 shadow-sm" : "text-slate-400")}
+          >
+            <LayoutGrid className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => setViewLayout('list')}
+            className={cn("p-2 rounded-xl transition-all", viewLayout === 'list' ? "bg-amber-100 text-amber-600 shadow-sm" : "text-slate-400")}
+          >
+            <List className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 flex-1 no-scrollbar">
+          {queenStatusOptions.map((status) => (
+            <button
+              key={status}
+              onClick={() => setQueenStatusFilter(status)}
+              className={cn(
+                "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border",
+                queenStatusFilter === status 
+                  ? "bg-amber-600 border-amber-600 text-white shadow-lg shadow-amber-200" 
+                  : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+              )}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+        <select 
+          value={sortBy} 
+          onChange={(e) => setSortBy(e.target.value as any)}
+          className="bg-white border border-slate-100 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 outline-none shadow-sm"
+        >
+          <option value="date-desc">En Yeni</option>
+          <option value="date-asc">En Eski</option>
+          <option value="code">Kovan No</option>
+        </select>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-amber-600" /></div>
       ) : (
-        <div className="grid gap-4">
+        <div className={cn(
+            "grid gap-4 transition-all",
+            viewLayout === 'grid' ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1"
+        )}>
           {filteredHives.map((hive) => {
             const color = getQueenColor(hive.queenYear || 0);
+            const statusStyles = getQueenStatusStyles(hive.queenStatus);
+            
+            if (viewLayout === 'grid') {
+              return (
+                <motion.div 
+                  key={hive.id} 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={cn(
+                    "relative p-4 rounded-3xl border shadow-sm flex flex-col items-center text-center gap-3 transition-all aspect-square justify-center group overflow-hidden cursor-pointer hover:shadow-md",
+                    statusStyles.bg,
+                    statusStyles.border
+                  )}
+                  onClick={() => setSelectedHiveForDetail(hive)}
+                >
+                  <div 
+                    className={cn(
+                      "w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl border transition-colors shadow-sm",
+                      hive.queenStatus === 'Ana Arısız' ? "bg-slate-300 border-slate-400 text-slate-700" : 
+                      (color.hex === '#FFFFFF' || color.hex === '#FACC15' ? "text-slate-800" : "text-white")
+                    )}
+                    style={hive.queenStatus !== 'Ana Arısız' ? { backgroundColor: color.hex, borderColor: color.hex === '#FFFFFF' ? '#e2e8f0' : color.hex } : {}}
+                  >
+                    {hive.code}
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <h4 className="font-extrabold text-slate-900 text-xs tracking-tight">{hive.code} - {hive.status.toUpperCase()}</h4>
+                    <div className="flex flex-col gap-1 items-center">
+                       <div className={cn(
+                        "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest text-white shadow-sm",
+                        statusStyles.badge
+                      )}>
+                        {hive.queenStatus}
+                      </div>
+                      <div className="flex gap-1">
+                         <span className="text-[7px] font-bold text-slate-500 uppercase bg-slate-100 px-1 rounded">{hive.breed} {hive.lineage}</span>
+                         <span className="text-[7px] font-bold text-amber-600 bg-amber-50 px-1 rounded">{hive.population} ÇR</span>
+                      </div>
+                    </div>
+                  </div>
+
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex flex-col gap-1 transition-opacity z-10">
+                    <button onClick={(e) => { e.stopPropagation(); startEdit(hive); }} className="p-1.5 bg-white shadow-md rounded-lg text-blue-500 hover:scale-110 transition-transform"><Edit2 className="w-3 h-3" /></button>
+                    <button onClick={async (e) => { e.stopPropagation(); if(confirm('Sil?')) await deleteDoc(doc(db, 'hives', hive.id)) }} className="p-1.5 bg-white shadow-md rounded-lg text-red-500 hover:scale-110 transition-transform"><Trash2 className="w-3 h-3" /></button>
+                  </div>
+
+                  <div className="absolute bottom-0 inset-x-0 h-1" style={{ backgroundColor: color.hex }} />
+                </motion.div>
+              );
+            }
+            
             return (
-              <motion.div key={hive.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+              <motion.div 
+                key={hive.id} 
+                className={cn(
+                  "p-5 rounded-3xl border shadow-sm space-y-4 transition-all cursor-pointer hover:shadow-md",
+                  statusStyles.bg,
+                  statusStyles.border
+                )}
+                onClick={() => setSelectedHiveForDetail(hive)}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center font-bold text-lg border border-slate-100">{hive.code}</div>
+                    <div className={cn(
+                      "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg border transition-colors",
+                      hive.queenStatus === 'Ana Arısız' ? "bg-slate-200 border-slate-300 text-slate-700" : 
+                      (color.hex === '#FFFFFF' || color.hex === '#FACC15' ? "text-slate-800" : "text-white")
+                    )}
+                    style={hive.queenStatus !== 'Ana Arısız' ? { backgroundColor: color.hex, borderColor: color.hex === '#FFFFFF' ? '#e2e8f0' : color.hex } : {}}
+                    >
+                      {hive.code}
+                    </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="font-bold text-slate-900">{hive.status.toUpperCase()}</h4>
@@ -121,10 +317,18 @@ export default function HiveList({ user }: HiveListProps) {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-bold text-amber-600 mb-1">{hive.queenStatus}</p>
+                    <div className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-1.5",
+                      statusStyles.badge,
+                      "text-white shadow-sm"
+                    )}>
+                      {hive.queenStatus === 'Ana Arısız' && <AlertCircle className="w-3 h-3" />}
+                      {hive.queenStatus === 'Meme Var' && <Sparkle className="w-3 h-3" />}
+                      {hive.queenStatus}
+                    </div>
                     <div className="flex gap-2 justify-end">
-                      <button onClick={() => startEdit(hive)} className="p-1 text-slate-300 hover:text-blue-500 transition-colors"><Edit2 className="w-4 h-4" /></button>
-                      <button onClick={async () => { if(confirm('Sil?')) await deleteDoc(doc(db, 'hives', hive.id)) }} className="p-1 text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); startEdit(hive); }} className="p-1 text-slate-300 hover:text-blue-500 transition-colors"><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={async (e) => { e.stopPropagation(); if(confirm('Sil?')) await deleteDoc(doc(db, 'hives', hive.id)) }} className="p-1 text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </div>
                 </div>
@@ -222,6 +426,17 @@ export default function HiveList({ user }: HiveListProps) {
                   </div>
                 </div>
 
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Notlar</label>
+                  <textarea 
+                    value={formData.notes} 
+                    onChange={e => setFormData({...formData, notes: e.target.value})} 
+                    placeholder="Kovan hakkında notlar..."
+                    rows={3}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none"
+                  />
+                </div>
+
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                    <div className="flex items-center gap-2">
                      <div className={cn("w-4 h-4 rounded-full", getQueenColor(formData.queenYear).class)} />
@@ -234,6 +449,12 @@ export default function HiveList({ user }: HiveListProps) {
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedHiveForDetail && (
+          <HiveDetail hive={selectedHiveForDetail} onClose={() => setSelectedHiveForDetail(null)} />
         )}
       </AnimatePresence>
     </div>

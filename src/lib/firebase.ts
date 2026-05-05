@@ -2,8 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer, enableIndexedDbPersistence } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
-
-export const APP_VERSION = '1.3.0';
+import { APP_VERSION } from '../constants';
 
 const app = initializeApp(firebaseConfig);
 

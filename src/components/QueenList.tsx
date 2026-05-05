@@ -328,7 +328,7 @@ export default function QueenList({ user }: QueenListProps) {
                     <h3 className="text-xl font-bold mb-4">Kovana Aktar</h3>
                     <p className="text-sm text-slate-500 mb-6">Seçili ana arıyı hangi kovana yerleştirmek istersiniz? Kovan bilgileri (irk, kuşak, ana yılı) otomatik güncellenecektir.</p>
                     <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                        {hives.filter(h => h.status === 'aktif').map(hive => (
+                        {hives.map(hive => (
                             <button 
                                 key={hive.id}
                                 onClick={() => handleTransferQueen(transferringQueenId, hive.id)}

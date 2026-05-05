@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, signInWithGoogle, logOut, APP_VERSION } from './lib/firebase';
-import { Layout, LogIn, LogOut, Loader2, Home, Box, Crown, ShoppingCart, Wallet, AlertCircle, Droplets, Shield, Package } from 'lucide-react';
+import { auth, signInWithGoogle, logOut } from './lib/firebase';
+import { Layout, LogIn, LogOut, Loader2, Home, Box, Crown, ShoppingCart, Wallet, AlertCircle, Droplets, Shield, Package, Settings as SettingsIcon } from 'lucide-react';
 import { cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import Logo from './components/Logo';
@@ -15,8 +15,10 @@ import ExpenseList from './components/ExpenseList';
 import FeedingList from './components/FeedingList';
 import MedicationList from './components/MedicationList';
 import StockList from './components/StockList';
+import Settings from './components/Settings';
+import { APP_VERSION, APP_STALE_CACHE_KEY } from './constants';
 
-type Tab = 'dashboard' | 'hives' | 'queens' | 'sales' | 'expenses' | 'feeding' | 'medication' | 'stocks';
+type Tab = 'dashboard' | 'hives' | 'queens' | 'sales' | 'expenses' | 'feeding' | 'medication' | 'stocks' | 'settings';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -24,6 +26,20 @@ export default function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [isSigningIn, setIsSigningIn] = useState(false);
+
+  useEffect(() => {
+    // Check for updates/stale cache
+    const storedVersion = localStorage.getItem(APP_STALE_CACHE_KEY);
+    if (storedVersion && storedVersion !== APP_VERSION) {
+      console.log(`Updating from ${storedVersion} to ${APP_VERSION}`);
+      // You could clear specific local storage items here if needed
+      localStorage.setItem(APP_STALE_CACHE_KEY, APP_VERSION);
+      // Optional: force reload to clear all caches if drastic changes happened
+      // window.location.reload(); 
+    } else if (!storedVersion) {
+      localStorage.setItem(APP_STALE_CACHE_KEY, APP_VERSION);
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -104,6 +120,7 @@ export default function App() {
       case 'feeding': return <FeedingList user={user} />;
       case 'medication': return <MedicationList user={user} />;
       case 'stocks': return <StockList user={user} />;
+      case 'settings': return <Settings user={user} />;
       default: return <Dashboard user={user} setActiveTab={setActiveTab} />;
     }
   };
@@ -117,6 +134,7 @@ export default function App() {
     { id: 'sales', icon: ShoppingCart, label: 'Satışlar' },
     { id: 'stocks', icon: Package, label: 'Stoklar' },
     { id: 'expenses', icon: Wallet, label: 'Giderler' },
+    { id: 'settings', icon: SettingsIcon, label: 'Ayarlar' },
   ];
 
   return (
