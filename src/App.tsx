@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, signInWithGoogle, logOut } from './lib/firebase';
-import { Layout, LogIn, LogOut, Loader2, Home, Box, Crown, ShoppingCart, Wallet, AlertCircle, Droplets, Shield, Package, Settings as SettingsIcon } from 'lucide-react';
+import { Layout, LogIn, LogOut, Loader2, Home, Box, Crown, ShoppingCart, Wallet, AlertCircle, Droplets, Shield, Package, Settings as SettingsIcon, Menu as MenuIcon, X } from 'lucide-react';
 import { cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import Logo from './components/Logo';
@@ -26,6 +26,7 @@ export default function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Check for updates/stale cache
@@ -137,6 +138,9 @@ export default function App() {
     { id: 'settings', icon: SettingsIcon, label: 'Ayarlar' },
   ];
 
+  const mobilePrimaryNav = navItems.slice(0, 3);
+  const mobileSecondaryNav = navItems.slice(3);
+
   return (
     <div className="min-h-screen bg-slate-50 pb-24 md:pb-0 md:pl-64 lg:pl-72">
       {/* Sidebar - Desktop */}
@@ -204,12 +208,15 @@ export default function App() {
 
       {/* Bottom Nav - Mobile */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-100 px-2 py-4 pb-6 flex items-center justify-around z-20 shadow-[0_-8px_30px_rgba(0,0,0,0.05)]">
-        {navItems.map((item) => (
+        {mobilePrimaryNav.map((item) => (
           <button
             key={item.id}
-            onClick={() => setActiveTab(item.id as Tab)}
+            onClick={() => {
+              setActiveTab(item.id as Tab);
+              setIsMobileMenuOpen(false);
+            }}
             className={cn(
-              "flex flex-col items-center gap-1.5 min-w-[50px] transition-all",
+              "flex flex-col items-center gap-1.5 min-w-[60px] transition-all",
               activeTab === item.id ? "text-amber-600 scale-110" : "text-slate-300"
             )}
           >
@@ -217,7 +224,76 @@ export default function App() {
             <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
           </button>
         ))}
+        
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className={cn(
+            "flex flex-col items-center gap-1.5 min-w-[60px] transition-all",
+            isMobileMenuOpen || mobileSecondaryNav.some(n => n.id === activeTab) ? "text-amber-600 scale-110" : "text-slate-300"
+          )}
+        >
+          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+          <span className="text-[8px] font-black uppercase tracking-widest">Menü</span>
+        </button>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              className="md:hidden fixed inset-x-0 bottom-[84px] bg-white rounded-t-[2.5rem] p-8 z-40 shadow-2xl border-t border-slate-100"
+            >
+              <div className="grid grid-cols-3 gap-6">
+                {mobileSecondaryNav.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id as Tab);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex flex-col items-center gap-3 p-4 rounded-3xl transition-all border",
+                      activeTab === item.id 
+                        ? "bg-amber-50 border-amber-200 text-amber-600 shadow-sm" 
+                        : "bg-slate-50 border-slate-100 text-slate-400"
+                    )}
+                  >
+                    <item.icon className="w-6 h-6" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-center">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img src={user.photoURL || ''} alt="" className="w-10 h-10 rounded-xl bg-slate-200" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black text-slate-900 truncate uppercase tracking-tighter">{user.displayName}</p>
+                    <p className="text-[9px] text-slate-400 truncate font-bold">{user.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={logOut}
+                  className="p-3 bg-red-50 text-red-500 rounded-xl active:scale-95 transition-transform"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
