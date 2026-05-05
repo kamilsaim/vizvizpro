@@ -3,15 +3,22 @@ import { User } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Hive, Queen, Sale, Expense, QueenBatch } from '../types';
-import { Box, Crown, TrendingUp, TrendingDown, Clock, Calendar, ChevronRight, Droplets, Shield, Sparkle, Package } from 'lucide-react';
-import { motion } from 'motion/react';
-import { cn, formatCurrency, formatDate } from '../lib/utils';
+import { Box, Crown, TrendingUp, TrendingDown, Clock, Calendar, ChevronRight, Droplets, Shield, Sparkle, Package, X, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { cn, formatCurrency, formatDate, getQueenColor } from '../lib/utils';
 import { addDays, format, differenceInDays } from 'date-fns';
 import StockList from './StockList';
+import HiveDetail from './HiveDetail';
 
 interface DashboardProps {
   user: User;
   setActiveTab: (tab: any) => void;
+}
+
+interface StatFilter {
+  type: 'breed' | 'lineage' | 'status';
+  value: string;
+  label: string;
 }
 
 export default function Dashboard({ user, setActiveTab }: DashboardProps) {
@@ -23,6 +30,8 @@ export default function Dashboard({ user, setActiveTab }: DashboardProps) {
     expenses: [] as Expense[]
   });
   const [loading, setLoading] = useState(true);
+  const [selectedStat, setSelectedStat] = useState<StatFilter | null>(null);
+  const [selectedHiveForDetail, setSelectedHiveForDetail] = useState<Hive | null>(null);
 
   useEffect(() => {
     const qHives = query(collection(db, 'hives'), where('userId', '==', user.uid));
@@ -120,10 +129,14 @@ export default function Dashboard({ user, setActiveTab }: DashboardProps) {
           </div>
           <div className="flex flex-wrap gap-2">
              {Object.entries(breedStats).map(([breed, count]) => (
-                <div key={breed} className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100">
-                   <span className="text-[10px] font-black text-slate-900 uppercase">{breed}</span>
+                <button 
+                  key={breed} 
+                  onClick={() => setSelectedStat({ type: 'breed', value: breed, label: `${breed} Irkı Kovanlar` })}
+                  className="flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-amber-50 rounded-2xl border border-slate-100 hover:border-amber-200 transition-all group"
+                >
+                   <span className="text-[10px] font-black text-slate-900 group-hover:text-amber-700 uppercase tracking-tight">{breed}</span>
                    <span className="bg-amber-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-lg">{count}</span>
-                </div>
+                </button>
              ))}
           </div>
         </div>
@@ -137,10 +150,14 @@ export default function Dashboard({ user, setActiveTab }: DashboardProps) {
           </div>
           <div className="flex flex-wrap gap-2">
              {Object.entries(lineageStats).map(([lineage, count]) => (
-                <div key={lineage} className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100">
-                   <span className="text-[10px] font-black text-slate-900 uppercase">{lineage}</span>
+                <button 
+                  key={lineage} 
+                  onClick={() => setSelectedStat({ type: 'lineage', value: lineage, label: `${lineage} Kuşak Kovanlar` })}
+                  className="flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-blue-50 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all group"
+                >
+                   <span className="text-[10px] font-black text-slate-900 group-hover:text-blue-700 uppercase tracking-tight">{lineage}</span>
                    <span className="bg-blue-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-lg">{count}</span>
-                </div>
+                </button>
              ))}
           </div>
         </div>
@@ -154,14 +171,18 @@ export default function Dashboard({ user, setActiveTab }: DashboardProps) {
           </div>
           <div className="flex flex-wrap gap-2">
              {Object.entries(queenStatusStats).map(([status, count]) => (
-                <div key={status} className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-2xl border transition-colors",
-                  status === 'Ana Arısız' ? "bg-red-50 border-red-100" :
-                  status === 'Meme Var' ? "bg-amber-50 border-amber-100" :
-                  status === 'Çiftleşmiş (Yumurtlayan)' ? "bg-green-50 border-green-100" : "bg-purple-50 border-purple-100"
-                )}>
+                <button 
+                  key={status} 
+                  onClick={() => setSelectedStat({ type: 'status', value: status, label: `${status} Kovanlar` })}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all hover:shadow-sm active:scale-95",
+                    status === 'Ana Arısız' ? "bg-red-50 border-red-100 hover:bg-red-100" :
+                    status === 'Meme Var' ? "bg-amber-50 border-amber-100 hover:bg-amber-100" :
+                    status === 'Çiftleşmiş (Yumurtlayan)' ? "bg-green-50 border-green-100 hover:bg-green-100" : "bg-purple-50 border-purple-100 hover:bg-purple-100"
+                  )}
+                >
                    <span className={cn(
-                     "text-[9px] font-black uppercase",
+                     "text-[9px] font-black uppercase tracking-tight",
                      status === 'Ana Arısız' ? "text-red-700" :
                      status === 'Meme Var' ? "text-amber-700" :
                      status === 'Çiftleşmiş (Yumurtlayan)' ? "text-green-700" : "text-purple-700"
@@ -172,7 +193,7 @@ export default function Dashboard({ user, setActiveTab }: DashboardProps) {
                      status === 'Meme Var' ? "bg-amber-600 text-white" :
                      status === 'Çiftleşmiş (Yumurtlayan)' ? "bg-green-600 text-white" : "bg-purple-600 text-white"
                    )}>{count}</span>
-                </div>
+                </button>
              ))}
           </div>
         </div>
@@ -280,6 +301,76 @@ export default function Dashboard({ user, setActiveTab }: DashboardProps) {
             </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {selectedStat && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedStat(null)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tighter">{selectedStat.label}</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Toplam {
+                    data.hives.filter(h => 
+                      selectedStat.type === 'breed' ? h.breed === selectedStat.value :
+                      selectedStat.type === 'lineage' ? h.lineage === selectedStat.value :
+                      h.queenStatus === selectedStat.value
+                    ).length
+                  } Kovan</p>
+                </div>
+                <button onClick={() => setSelectedStat(null)} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-400 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-8 max-h-[60vh] overflow-y-auto space-y-3">
+                {data.hives
+                  .filter(h => 
+                    selectedStat.type === 'breed' ? h.breed === selectedStat.value :
+                    selectedStat.type === 'lineage' ? h.lineage === selectedStat.value :
+                    h.queenStatus === selectedStat.value
+                  )
+                  .map(hive => (
+                    <button
+                      key={hive.id}
+                      onClick={() => setSelectedHiveForDetail(hive)}
+                      className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-amber-50 rounded-2xl border border-slate-100 hover:border-amber-100 transition-all text-left"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center font-black text-slate-500">{hive.code}</div>
+                        <div>
+                          <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{hive.breed} • {hive.lineage}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{hive.queenStatus}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                         <div className={cn("w-3 h-3 rounded-full", getQueenColor(hive.queenYear).class)} />
+                         <ChevronRight className="w-4 h-4 text-slate-300" />
+                      </div>
+                    </button>
+                  ))
+                }
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedHiveForDetail && (
+          <HiveDetail hive={selectedHiveForDetail} onClose={() => setSelectedHiveForDetail(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
