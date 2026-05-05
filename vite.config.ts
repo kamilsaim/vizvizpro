@@ -6,7 +6,7 @@ import {defineConfig, loadEnv} from 'vite';
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
-    // 1. BURASI KRİTİK: GitHub Pages'deki alt klasör adını ekliyoruz.
+    // BURAYI EKLEYİN: GitHub Pages alt klasör yolu
     base: '/vizvizpro/', 
     
     plugins: [react(), tailwindcss()],
@@ -19,7 +19,6 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };
